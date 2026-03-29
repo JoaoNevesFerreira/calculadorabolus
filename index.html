@@ -2,7 +2,9 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Bolus Calculator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -14,37 +16,33 @@
       --border: #1e2d45;
       --accent: #00d4aa;
       --accent-dim: #00d4aa18;
-      --accent-soft: #00d4aa33;
       --text: #e8f4f0;
       --muted: #7a9baa;
-      --dim: #3a5568;
       --danger: #ff6b6b;
       --warn: #ffd166;
       --good: #06d6a0;
       --blue: #6ec6ff;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
     body {
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
-      padding-bottom: 60px;
+      padding-bottom: 80px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* HEADER */
     .header {
-      padding: 28px 24px 20px;
+      padding: 52px 24px 18px;
       border-bottom: 1px solid var(--border);
       background: linear-gradient(180deg, #0d1520 0%, var(--bg) 100%);
-      position: relative;
-      overflow: hidden;
+      position: relative; overflow: hidden;
     }
     .header::before {
-      content: '';
-      position: absolute; top: -40px; right: -40px;
+      content: ''; position: absolute; top: -40px; right: -40px;
       width: 220px; height: 220px;
       background: radial-gradient(circle, #00d4aa0f 0%, transparent 70%);
       pointer-events: none;
@@ -56,10 +54,18 @@
     }
     .header-title { font-size: 22px; font-weight: 600; }
 
-    /* TABS */
+    .save-status {
+      position: absolute; top: 52px; right: 20px;
+      font-size: 11px; font-family: 'Space Mono', monospace;
+      color: var(--muted); display: flex; align-items: center; gap: 5px;
+      transition: color 0.3s;
+    }
+    .save-status.saving { color: var(--warn); }
+    .save-status.saved  { color: var(--accent); }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
     .tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
+      display: flex; border-bottom: 1px solid var(--border);
       background: var(--surface);
       position: sticky; top: 0; z-index: 10;
     }
@@ -68,256 +74,161 @@
       background: none; border: none; border-bottom: 2px solid transparent;
       cursor: pointer; font-family: 'DM Sans', sans-serif;
       font-size: 13px; font-weight: 500; color: var(--muted);
-      transition: all 0.2s; letter-spacing: 0.5px;
+      transition: all 0.2s;
     }
-    .tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-      background: var(--accent-dim);
-    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--accent-dim); }
 
-    /* CONTENT */
     .content { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
     .pane { display: none; }
     .pane.active { display: block; }
 
-    /* BLOCK CHIPS */
     .block-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
     .chip {
-      padding: 7px 14px; border-radius: 20px;
+      padding: 8px 16px; border-radius: 20px;
       border: 1px solid var(--border); background: var(--card);
       color: var(--muted); font-size: 13px; cursor: pointer;
       transition: all 0.2s; font-family: 'DM Sans', sans-serif;
     }
-    .chip.active {
-      border-color: var(--accent); background: var(--accent-dim);
-      color: var(--accent);
-    }
+    .chip.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
 
-    /* INFO GRID */
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .info-pill {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 14px;
-    }
+    .info-pill { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
     .info-pill-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
-    .info-pill-val {
-      font-family: 'Space Mono', monospace; font-size: 16px;
-      font-weight: 700; color: var(--text); margin-top: 4px;
-    }
+    .info-pill-val { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--text); margin-top: 4px; }
 
-    /* NUMBER INPUTS */
     .input-group { margin-bottom: 16px; }
-    .input-label {
-      font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
-      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
-      display: block;
-    }
+    .input-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
     .number-input {
       display: flex; align-items: center;
       background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; overflow: hidden; transition: border-color 0.2s;
+      border-radius: 12px; overflow: hidden; transition: border-color 0.2s;
     }
     .number-input:focus-within { border-color: var(--accent); }
     .num-btn {
-      width: 48px; height: 54px; background: none; border: none;
-      cursor: pointer; color: var(--accent); font-size: 22px;
+      width: 52px; height: 58px; background: none; border: none;
+      cursor: pointer; color: var(--accent); font-size: 24px;
       transition: background 0.15s; display: flex; align-items: center; justify-content: center;
     }
-    .num-btn:hover { background: var(--accent-dim); }
+    .num-btn:active { background: var(--accent-dim); }
     .num-field {
       flex: 1; background: none; border: none; outline: none;
-      text-align: center; font-size: 26px; font-weight: 700;
+      text-align: center; font-size: 28px; font-weight: 700;
       font-family: 'Space Mono', monospace; color: var(--text); padding: 0;
     }
-    .num-unit {
-      padding: 0 14px; font-size: 12px; color: var(--muted);
-      font-family: 'Space Mono', monospace; white-space: nowrap;
-    }
+    .num-unit { padding: 0 12px; font-size: 12px; color: var(--muted); font-family: 'Space Mono', monospace; white-space: nowrap; }
 
-    /* STEP TOGGLE */
     .step-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
     .step-lbl { font-size: 12px; color: var(--muted); }
     .step-btn {
-      padding: 6px 18px; border-radius: 6px;
+      padding: 8px 20px; border-radius: 8px;
       border: 1px solid var(--border); background: var(--card);
       color: var(--muted); font-family: 'Space Mono', monospace;
       font-size: 13px; cursor: pointer; transition: all 0.2s;
     }
-    .step-btn.active {
-      border-color: var(--accent); background: var(--accent-dim); color: var(--accent);
-    }
+    .step-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
 
-    /* CALC BUTTON */
     .calc-btn {
-      width: 100%; padding: 16px; border-radius: 12px; border: none;
+      width: 100%; padding: 18px; border-radius: 14px; border: none;
       background: linear-gradient(135deg, var(--accent) 0%, #00b894 100%);
       color: #001a14; font-family: 'DM Sans', sans-serif;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: opacity 0.2s; letter-spacing: 0.5px;
+      font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
     }
-    .calc-btn:hover { opacity: 0.85; }
+    .calc-btn:active { opacity: 0.8; }
 
-    /* RESULT CARD */
     .result-card {
       background: linear-gradient(135deg, #0d2a24 0%, #0a1f2e 100%);
       border: 1px solid #00d4aa2a; border-radius: 16px;
       padding: 24px; text-align: center; margin-top: 20px;
-      position: relative; overflow: hidden;
-      animation: fadeIn 0.3s ease;
+      position: relative; overflow: hidden; animation: fadeIn 0.3s ease;
     }
     .result-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
       background: linear-gradient(90deg, transparent, #00d4aa77, transparent);
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    .result-lbl {
-      font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 8px;
-      font-family: 'Space Mono', monospace;
-    }
-    .result-val {
-      font-family: 'Space Mono', monospace; font-size: 60px;
-      font-weight: 700; color: var(--accent); line-height: 1;
-      letter-spacing: -2px;
-    }
+    .result-lbl { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-family: 'Space Mono', monospace; }
+    .result-val { font-family: 'Space Mono', monospace; font-size: 60px; font-weight: 700; color: var(--accent); line-height: 1; letter-spacing: -2px; }
     .result-unit { font-size: 16px; color: var(--muted); margin-top: 4px; }
     .adjusted-badge {
       display: inline-block; font-size: 11px;
       background: #ffd16618; color: var(--warn);
       border: 1px solid #ffd16633; border-radius: 6px;
-      padding: 3px 10px; margin-top: 10px;
-      font-family: 'Space Mono', monospace;
+      padding: 3px 10px; margin-top: 10px; font-family: 'Space Mono', monospace;
     }
-    .breakdown {
-      display: flex; border-top: 1px solid var(--border);
-      padding-top: 16px; margin-top: 16px;
-    }
-    .bd-item {
-      flex: 1; text-align: center;
-      border-right: 1px solid var(--border);
-    }
+    .breakdown { display: flex; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 16px; }
+    .bd-item { flex: 1; text-align: center; border-right: 1px solid var(--border); }
     .bd-item:last-child { border-right: none; }
-    .bd-val {
-      font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700;
-    }
-    .bd-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.5px; }
+    .bd-val { font-family: 'Space Mono', monospace; font-size: 18px; font-weight: 700; }
+    .bd-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; }
 
-    /* BLOCKS TAB */
-    .block-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 14px; margin-bottom: 14px; overflow: hidden;
+    .blocks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .blocks-title { font-size: 13px; color: var(--muted); }
+    .storage-badge {
+      font-size: 10px; font-family: 'Space Mono', monospace;
+      color: var(--accent); background: var(--accent-dim);
+      border: 1px solid #00d4aa22; border-radius: 6px; padding: 3px 8px;
     }
+
+    .block-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 14px; overflow: hidden; }
     .block-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; cursor: pointer; transition: background 0.15s;
-      user-select: none;
+      padding: 14px 16px; cursor: pointer; user-select: none;
     }
-    .block-header:hover { background: var(--accent-dim); }
-    .block-dot {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    }
+    .block-header:active { background: var(--accent-dim); }
+    .block-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .block-name-row { display: flex; align-items: center; gap: 10px; }
     .block-name { font-weight: 600; font-size: 15px; }
     .block-time { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
     .chevron { color: var(--muted); transition: transform 0.25s; font-size: 11px; }
     .chevron.open { transform: rotate(180deg); }
 
-    .block-form {
-      padding: 0 16px 16px; border-top: 1px solid var(--border);
-      display: none;
-    }
+    .block-form { padding: 0 16px 16px; border-top: 1px solid var(--border); display: none; }
     .block-form.open { display: block; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
     .form-row.full { grid-template-columns: 1fr; }
     .form-field { display: flex; flex-direction: column; gap: 6px; }
-    .form-label {
-      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-      color: var(--muted); font-weight: 600;
-    }
+    .form-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
     .form-input {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 9px 12px;
-      color: var(--text); font-family: 'Space Mono', monospace; font-size: 14px;
+      border-radius: 8px; padding: 11px 12px;
+      color: var(--text); font-family: 'Space Mono', monospace; font-size: 15px;
       outline: none; transition: border-color 0.2s; width: 100%;
+      -webkit-appearance: none;
     }
     .form-input:focus { border-color: var(--accent); }
 
-    .form-actions { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+    .form-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
     .btn-delete {
-      padding: 9px 16px; border-radius: 8px;
+      padding: 11px 18px; border-radius: 8px;
       border: 1px solid #ff6b6b33; background: none;
       color: var(--danger); font-family: 'DM Sans', sans-serif;
-      font-size: 13px; cursor: pointer; transition: background 0.2s;
+      font-size: 14px; cursor: pointer;
     }
-    .btn-delete:hover { background: #ff6b6b11; }
+    .btn-delete:active { background: #ff6b6b11; }
+    .autosave-note { font-size: 11px; color: var(--muted); font-family: 'Space Mono', monospace; }
 
-    .btn-save {
-      flex: 1; padding: 10px 16px; border-radius: 8px; border: none;
-      background: linear-gradient(135deg, var(--accent) 0%, #00b894 100%);
-      color: #001a14; font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      transition: opacity 0.2s; display: flex; align-items: center;
-      justify-content: center; gap: 6px;
+    .btn-add {
+      width: 100%; padding: 16px; border-radius: 12px;
+      border: 1px dashed var(--border); background: none;
+      color: var(--muted); font-family: 'DM Sans', sans-serif;
+      font-size: 14px; cursor: pointer; margin-top: 4px;
     }
-    .btn-save:hover { opacity: 0.85; }
-    .btn-save:disabled { opacity: 0.4; cursor: default; }
+    .btn-add:active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
-    /* unsaved dot on block header */
-    .unsaved-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--warn); flex-shrink: 0;
-      box-shadow: 0 0 6px var(--warn);
-    }
+    .empty-msg { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
 
-    /* TOAST */
     #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
       background: #0d2a24; border: 1px solid var(--accent);
       border-radius: 10px; padding: 12px 22px;
       font-size: 13px; font-weight: 600; color: var(--accent);
-      font-family: 'Space Mono', monospace; letter-spacing: 0.5px;
+      font-family: 'Space Mono', monospace;
       z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
       opacity: 0; pointer-events: none; white-space: nowrap;
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* save-all bar */
-    .save-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 16px; margin-bottom: 16px;
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-    .save-bar-info { font-size: 12px; color: var(--muted); }
-    .save-bar-info span { color: var(--accent); font-family: 'Space Mono', monospace; font-size: 11px; }
-    .btn-save-all {
-      padding: 8px 18px; border-radius: 8px; border: none;
-      background: linear-gradient(135deg, var(--accent) 0%, #00b894 100%);
-      color: #001a14; font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;
-    }
-    .btn-save-all:hover { opacity: 0.85; }
-
-    .btn-add {
-      width: 100%; padding: 14px; border-radius: 12px;
-      border: 1px dashed var(--border); background: none;
-      color: var(--muted); font-family: 'DM Sans', sans-serif;
-      font-size: 14px; cursor: pointer; transition: all 0.2s;
-      margin-top: 4px;
-    }
-    .btn-add:hover {
-      border-color: var(--accent); color: var(--accent);
-      background: var(--accent-dim);
-    }
-
-    .empty-msg { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
-
-    /* SCROLLBAR */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    #toast.error { border-color: var(--danger); color: var(--danger); background: #2a0d0d; }
   </style>
 </head>
 <body>
@@ -325,39 +236,40 @@
 <div class="header">
   <div class="header-label">Bolus Calculator</div>
   <div class="header-title">Gestão de Insulina</div>
+  <div class="save-status" id="save-status">
+    <div class="status-dot"></div>
+    <span id="save-txt">pronto</span>
+  </div>
 </div>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('calc')">⚗️ Calcular</button>
-  <button class="tab" onclick="switchTab('blocks')">🕐 Blocos</button>
+  <button class="tab active" onclick="switchTab('calc',this)">⚗️ Calcular</button>
+  <button class="tab" onclick="switchTab('blocks',this)">🕐 Blocos</button>
 </div>
 
 <div class="content">
-  <!-- CALC PANE -->
   <div id="pane-calc" class="pane active">
-    <div style="font-size:12px; color:var(--muted); margin-bottom:10px; letter-spacing:0.5px;">
-      Seleciona o bloco de tempo
-    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Seleciona o bloco de tempo</div>
     <div class="block-chips" id="block-chips"></div>
     <div class="info-grid" id="info-grid"></div>
 
     <div class="input-group">
       <label class="input-label">🍞 Hidratos de Carbono</label>
       <div class="number-input">
-        <button class="num-btn" onclick="adjustVal('carbs', -5)">−</button>
-        <input class="num-field" type="number" id="carbs" value="40" min="0" />
+        <button class="num-btn" onclick="adj('carbs',-5)">−</button>
+        <input class="num-field" type="number" id="carbs" value="40" min="0" inputmode="numeric" />
         <span class="num-unit">g HC</span>
-        <button class="num-btn" onclick="adjustVal('carbs', 5)">+</button>
+        <button class="num-btn" onclick="adj('carbs',5)">+</button>
       </div>
     </div>
 
     <div class="input-group">
       <label class="input-label">🩸 Glicemia Atual</label>
       <div class="number-input">
-        <button class="num-btn" onclick="adjustVal('bg', -5)">−</button>
-        <input class="num-field" type="number" id="bg" value="140" min="40" />
+        <button class="num-btn" onclick="adj('bg',-5)">−</button>
+        <input class="num-field" type="number" id="bg" value="140" min="40" inputmode="numeric" />
         <span class="num-unit">mg/dL</span>
-        <button class="num-btn" onclick="adjustVal('bg', 5)">+</button>
+        <button class="num-btn" onclick="adj('bg',5)">+</button>
       </div>
     </div>
 
@@ -368,328 +280,221 @@
     </div>
 
     <button class="calc-btn" onclick="calculate()">Calcular Bolus</button>
-
     <div id="result-area"></div>
   </div>
 
-  <!-- BLOCKS PANE -->
   <div id="pane-blocks" class="pane">
-    <div class="save-bar">
-      <div class="save-bar-info">
-        Alterações gravadas em <span>localStorage</span>
-      </div>
-      <button class="btn-save-all" onclick="saveAllBlocks()">💾 Gravar Tudo</button>
+    <div class="blocks-header">
+      <span class="blocks-title">Blocos configurados</span>
+      <span class="storage-badge">auto-save ✓</span>
     </div>
     <div id="blocks-list"></div>
     <button class="btn-add" onclick="addBlock()">+ Adicionar Bloco de Tempo</button>
   </div>
 </div>
 
-<div id="toast">✓ Gravado com sucesso</div>
+<div id="toast"></div>
 
 <script>
-  // ── STATE ──────────────────────────────────────────────────────────────────
-  const DOT_COLORS = ['#00d4aa','#ffd166','#ff6b6b','#6ec6ff','#b388ff','#ff9f43','#a29bfe'];
-  const STORAGE_KEY = 'bolus_blocks_v1';
-  let nextId = 10;
-  let currentStep = 0.5;
-  let selectedBlock = 0;
-  let unsavedIds = new Set(); // tracks which blocks have unsaved changes
+const KEY = 'bolus_v2';
+const DOTS = ['#00d4aa','#ffd166','#ff6b6b','#6ec6ff','#b388ff','#ff9f43'];
+const DEFS = [
+  {id:1,name:"Pequeno-Almoço",startTime:"07:00",endTime:"10:00",icRatio:10,isf:50,target:100,dia:4},
+  {id:2,name:"Almoço",        startTime:"12:00",endTime:"15:00",icRatio:12,isf:55,target:100,dia:4},
+  {id:3,name:"Jantar",        startTime:"19:00",endTime:"22:00",icRatio:14,isf:60,target:110,dia:4},
+  {id:4,name:"Noite",         startTime:"22:00",endTime:"07:00",icRatio:16,isf:65,target:120,dia:4},
+];
 
-  const DEFAULT_BLOCKS = [
-    { id:1, name:"Pequeno-Almoço", startTime:"07:00", endTime:"10:00", icRatio:10, isf:50, target:100, dia:4 },
-    { id:2, name:"Almoço",         startTime:"12:00", endTime:"15:00", icRatio:12, isf:55, target:100, dia:4 },
-    { id:3, name:"Jantar",         startTime:"19:00", endTime:"22:00", icRatio:14, isf:60, target:110, dia:4 },
-    { id:4, name:"Noite",          startTime:"22:00", endTime:"07:00", icRatio:16, isf:65, target:120, dia:4 },
-  ];
+// ── storage ────────────────────────────────────────────────────────────────
+function canStore() {
+  try { localStorage.setItem('_t','1'); localStorage.removeItem('_t'); return true; } catch(e){ return false; }
+}
+const HAS_LS = canStore();
+function save() { if(HAS_LS) try{ localStorage.setItem(KEY, JSON.stringify(blocks)); }catch(e){} }
+function load() {
+  if(!HAS_LS) return null;
+  try { const r=localStorage.getItem(KEY); return r?JSON.parse(r):null; } catch(e){ return null; }
+}
 
-  function loadBlocks() {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          nextId = Math.max(...parsed.map(b => b.id)) + 1;
-          return parsed;
-        }
-      }
-    } catch(e) {}
-    return JSON.parse(JSON.stringify(DEFAULT_BLOCKS));
-  }
+// ── state ──────────────────────────────────────────────────────────────────
+let blocks  = load() || JSON.parse(JSON.stringify(DEFS));
+let nextId  = Math.max(...blocks.map(b=>b.id), 9) + 1;
+let selIdx  = 0;
+let step    = 0.5;
+let openId  = null;
+let saveT   = null;
+let toastT  = null;
 
-  let blocks = loadBlocks();
+// ── toast ──────────────────────────────────────────────────────────────────
+function toast(msg, err) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=(err?'error ':'')+'show';
+  clearTimeout(toastT); toastT=setTimeout(()=>t.className='',2200);
+}
 
-  // ── TOAST ──────────────────────────────────────────────────────────────────
-  let toastTimer = null;
-  function showToast(msg = '✓ Gravado com sucesso') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-  }
+// ── auto-save (debounced) ──────────────────────────────────────────────────
+function autoSave() {
+  const el=document.getElementById('save-status');
+  const tx=document.getElementById('save-txt');
+  el.className='save-status saving'; tx.textContent='a gravar…';
+  clearTimeout(saveT);
+  saveT=setTimeout(()=>{
+    save();
+    el.className='save-status saved'; tx.textContent='gravado ✓';
+    setTimeout(()=>{ el.className='save-status'; tx.textContent='pronto'; }, 2000);
+  }, 700);
+}
 
-  // ── SAVE ───────────────────────────────────────────────────────────────────
-  function saveBlock(id) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
-      unsavedIds.delete(id);
-      renderBlocks();
-      showToast('✓ Bloco gravado');
-    } catch(e) {
-      showToast('⚠ Erro ao gravar');
-    }
-  }
+// ── tabs ───────────────────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pane-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='blocks') renderBlocks();
+  if(name==='calc')   renderChips();
+}
 
-  function saveAllBlocks() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
-      unsavedIds.clear();
-      renderBlocks();
-      showToast('✓ Todos os blocos gravados');
-    } catch(e) {
-      showToast('⚠ Erro ao gravar');
-    }
-  }
-
-  // ── TABS ──────────────────────────────────────────────────────────────────
-  function switchTab(name) {
-    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('pane-' + name).classList.add('active');
-    event.target.classList.add('active');
-    if (name === 'blocks') renderBlocks();
-    if (name === 'calc') renderChips();
-  }
-
-  // ── HELPERS ───────────────────────────────────────────────────────────────
-  function roundToStep(val, step) { return Math.round(val / step) * step; }
-
-  function adjustVal(fieldId, delta) {
-    const el = document.getElementById(fieldId);
-    const min = fieldId === 'bg' ? 40 : 0;
-    el.value = Math.max(min, Number(el.value) + delta);
-  }
-
-  function setStep(s) {
-    currentStep = s;
-    document.getElementById('step-05').classList.toggle('active', s === 0.5);
-    document.getElementById('step-10').classList.toggle('active', s === 1.0);
-  }
-
-  // ── CALC TAB ──────────────────────────────────────────────────────────────
-  function renderChips() {
-    const el = document.getElementById('block-chips');
-    if (blocks.length === 0) {
-      el.innerHTML = '<p class="empty-msg">Nenhum bloco. Vai ao separador Blocos.</p>';
-      document.getElementById('info-grid').innerHTML = '';
-      return;
-    }
-    el.innerHTML = blocks.map((b, i) =>
-      `<button class="chip ${i === selectedBlock ? 'active' : ''}"
-        onclick="selectBlock(${i})">${b.name}</button>`
-    ).join('');
-    renderInfoGrid();
-  }
-
-  function selectBlock(i) {
-    selectedBlock = i;
-    document.getElementById('result-area').innerHTML = '';
-    renderChips();
-  }
-
-  function renderInfoGrid() {
-    const b = blocks[selectedBlock];
-    if (!b) { document.getElementById('info-grid').innerHTML = ''; return; }
-    document.getElementById('info-grid').innerHTML = `
-      <div class="info-pill">
-        <div class="info-pill-lbl">Rácio I:HC</div>
-        <div class="info-pill-val">1:${b.icRatio}g</div>
+// ── calc tab ───────────────────────────────────────────────────────────────
+function renderChips() {
+  const el=document.getElementById('block-chips');
+  if(!blocks.length){ el.innerHTML='<p class="empty-msg">Sem blocos.</p>'; document.getElementById('info-grid').innerHTML=''; return; }
+  el.innerHTML=blocks.map((b,i)=>`<button class="chip ${i===selIdx?'active':''}" onclick="selBlock(${i})">${b.name}</button>`).join('');
+  renderInfo();
+}
+function selBlock(i){ selIdx=i; document.getElementById('result-area').innerHTML=''; renderChips(); }
+function renderInfo() {
+  const b=blocks[selIdx];
+  if(!b){ document.getElementById('info-grid').innerHTML=''; return; }
+  document.getElementById('info-grid').innerHTML=`
+    <div class="info-pill"><div class="info-pill-lbl">Rácio I:HC</div><div class="info-pill-val">1:${b.icRatio}g</div></div>
+    <div class="info-pill"><div class="info-pill-lbl">Factor Sensib.</div><div class="info-pill-val">${b.isf} mg/dL</div></div>
+    <div class="info-pill"><div class="info-pill-lbl">Objectivo Glic.</div><div class="info-pill-val">${b.target} mg/dL</div></div>
+    <div class="info-pill"><div class="info-pill-lbl">Duração Ins.</div><div class="info-pill-val">${b.dia}h</div></div>`;
+}
+function adj(id, d) {
+  const el=document.getElementById(id);
+  el.value=Math.max(id==='bg'?40:0, Number(el.value)+d);
+}
+function setStep(s) {
+  step=s;
+  document.getElementById('step-05').classList.toggle('active',s===0.5);
+  document.getElementById('step-10').classList.toggle('active',s===1.0);
+}
+function calculate() {
+  const b=blocks[selIdx]; if(!b) return;
+  const carbs=Number(document.getElementById('carbs').value);
+  const bg   =Number(document.getElementById('bg').value);
+  const cb=carbs/b.icRatio;
+  const corr=(bg-b.target)/b.isf;
+  const raw=Math.max(0,cb+corr);
+  const adj2=Math.max(0,Math.round(raw/step)*step);
+  const cc=corr>0?'var(--warn)':corr<0?'var(--blue)':'var(--muted)';
+  const badge=Math.abs(raw-adj2)>=0.05?`<div class="adjusted-badge">Calc: ${raw.toFixed(2)}U → arredondado p/ ${step}U</div>`:'';
+  document.getElementById('result-area').innerHTML=`
+    <div class="result-card">
+      <div class="result-lbl">Dose de Bolus</div>
+      <div class="result-val">${adj2.toFixed(1)}</div>
+      <div class="result-unit">unidades</div>
+      ${badge}
+      <div class="breakdown">
+        <div class="bd-item"><div class="bd-val" style="color:var(--good)">${Math.max(0,cb).toFixed(2)}</div><div class="bd-lbl">Bolus HC</div></div>
+        <div class="bd-item"><div class="bd-val" style="color:${cc}">${corr>=0?'+':''}${corr.toFixed(2)}</div><div class="bd-lbl">Correção</div></div>
+        <div class="bd-item"><div class="bd-val">${raw.toFixed(2)}</div><div class="bd-lbl">Total calc.</div></div>
       </div>
-      <div class="info-pill">
-        <div class="info-pill-lbl">Factor Sensib.</div>
-        <div class="info-pill-val">${b.isf} mg/dL</div>
-      </div>
-      <div class="info-pill">
-        <div class="info-pill-lbl">Objectivo Glic.</div>
-        <div class="info-pill-val">${b.target} mg/dL</div>
-      </div>
-      <div class="info-pill">
-        <div class="info-pill-lbl">Duração Ins.</div>
-        <div class="info-pill-val">${b.dia}h</div>
-      </div>
-    `;
-  }
+    </div>`;
+}
 
-  function calculate() {
-    const b = blocks[selectedBlock];
-    if (!b) return;
-    const carbs = Number(document.getElementById('carbs').value);
-    const bg = Number(document.getElementById('bg').value);
-
-    const carbBolus  = carbs / b.icRatio;
-    const corrBolus  = (bg - b.target) / b.isf;
-    const rawTotal   = Math.max(0, carbBolus + corrBolus);
-    const adjusted   = Math.max(0, roundToStep(rawTotal, currentStep));
-    const corrDisplay = corrBolus;
-
-    const corrColor = corrBolus > 0 ? 'var(--warn)' : corrBolus < 0 ? 'var(--blue)' : 'var(--muted)';
-    const sign = corrDisplay >= 0 ? '+' : '';
-    const showBadge = Math.abs(rawTotal - adjusted) >= 0.05;
-
-    document.getElementById('result-area').innerHTML = `
-      <div class="result-card">
-        <div class="result-lbl">Dose de Bolus</div>
-        <div class="result-val">${adjusted.toFixed(1)}</div>
-        <div class="result-unit">unidades</div>
-        ${showBadge ? `<div class="adjusted-badge">Calculado: ${rawTotal.toFixed(2)}U → arredondado p/ ${currentStep}U</div>` : ''}
-        <div class="breakdown">
-          <div class="bd-item">
-            <div class="bd-val" style="color:var(--good)">${Math.max(0,carbBolus).toFixed(2)}</div>
-            <div class="bd-lbl">Bolus HC</div>
-          </div>
-          <div class="bd-item">
-            <div class="bd-val" style="color:${corrColor}">${sign}${corrDisplay.toFixed(2)}</div>
-            <div class="bd-lbl">Correção</div>
-          </div>
-          <div class="bd-item">
-            <div class="bd-val">${rawTotal.toFixed(2)}</div>
-            <div class="bd-lbl">Total calc.</div>
+// ── blocks tab ─────────────────────────────────────────────────────────────
+function renderBlocks() {
+  const el=document.getElementById('blocks-list');
+  if(!blocks.length){ el.innerHTML='<p class="empty-msg">Sem blocos. Adiciona um abaixo.</p>'; return; }
+  el.innerHTML=blocks.map((b,i)=>{
+    const op=openId===b.id;
+    return `<div class="block-card" id="bc-${b.id}">
+      <div class="block-header" onclick="toggleB(${b.id})">
+        <div class="block-name-row">
+          <div class="block-dot" style="background:${DOTS[i%DOTS.length]}"></div>
+          <div>
+            <div class="block-name" id="bn-${b.id}">${b.name}</div>
+            <div class="block-time" id="bt-${b.id}">${b.startTime} – ${b.endTime}</div>
           </div>
         </div>
+        <span class="chevron ${op?'open':''}">▼</span>
       </div>
-    `;
-  }
-
-  // ── BLOCKS TAB ────────────────────────────────────────────────────────────
-  let expandedBlockId = null;
-
-  function renderBlocks() {
-    const el = document.getElementById('blocks-list');
-    if (blocks.length === 0) {
-      el.innerHTML = '<p class="empty-msg">Sem blocos. Adiciona um abaixo.</p>';
-      return;
-    }
-    el.innerHTML = blocks.map((b, i) => {
-      const isOpen = expandedBlockId === b.id;
-      const isDirty = unsavedIds.has(b.id);
-      return `
-        <div class="block-card" id="bcard-${b.id}">
-          <div class="block-header" onclick="toggleBlock(${b.id})">
-            <div class="block-name-row">
-              <div class="block-dot" style="background:${DOT_COLORS[i % DOT_COLORS.length]}"></div>
-              <div>
-                <div class="block-name" id="bname-${b.id}">${b.name}</div>
-                <div class="block-time">${b.startTime} – ${b.endTime}</div>
-              </div>
-              ${isDirty ? '<div class="unsaved-dot" title="Alterações por gravar"></div>' : ''}
-            </div>
-            <span class="chevron ${isOpen ? 'open' : ''}" id="chev-${b.id}">▼</span>
+      <div class="block-form ${op?'open':''}">
+        <div class="form-row full"><div class="form-field">
+          <label class="form-label">Nome do Bloco</label>
+          <input class="form-input" type="text" value="${b.name}" oninput="upd(${b.id},'name',this.value)" />
+        </div></div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Início</label>
+            <input class="form-input" type="time" value="${b.startTime}" onchange="upd(${b.id},'startTime',this.value)" />
           </div>
-          <div class="block-form ${isOpen ? 'open' : ''}" id="bform-${b.id}">
-            <div class="form-row full">
-              <div class="form-field">
-                <label class="form-label">Nome do Bloco</label>
-                <input class="form-input" type="text" value="${b.name}"
-                  oninput="updateBlock(${b.id},'name',this.value)" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-field">
-                <label class="form-label">Início</label>
-                <input class="form-input" type="time" value="${b.startTime}"
-                  onchange="updateBlock(${b.id},'startTime',this.value)" />
-              </div>
-              <div class="form-field">
-                <label class="form-label">Fim</label>
-                <input class="form-input" type="time" value="${b.endTime}"
-                  onchange="updateBlock(${b.id},'endTime',this.value)" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-field">
-                <label class="form-label">Rácio I:HC (g por U)</label>
-                <input class="form-input" type="number" value="${b.icRatio}"
-                  oninput="updateBlock(${b.id},'icRatio',+this.value)" />
-              </div>
-              <div class="form-field">
-                <label class="form-label">Factor Sensibilidade</label>
-                <input class="form-input" type="number" value="${b.isf}"
-                  oninput="updateBlock(${b.id},'isf',+this.value)" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-field">
-                <label class="form-label">Objectivo Glicemia (mg/dL)</label>
-                <input class="form-input" type="number" value="${b.target}"
-                  oninput="updateBlock(${b.id},'target',+this.value)" />
-              </div>
-              <div class="form-field">
-                <label class="form-label">Duração Insulina (h)</label>
-                <input class="form-input" type="number" value="${b.dia}"
-                  oninput="updateBlock(${b.id},'dia',+this.value)" />
-              </div>
-            </div>
-            <div class="form-actions">
-              <button class="btn-delete" onclick="deleteBlock(${b.id})">🗑 Eliminar</button>
-              <button class="btn-save ${isDirty ? '' : ''}" onclick="saveBlock(${b.id})">
-                💾 ${isDirty ? 'Gravar Alterações' : 'Gravado'}
-              </button>
-            </div>
+          <div class="form-field">
+            <label class="form-label">Fim</label>
+            <input class="form-input" type="time" value="${b.endTime}" onchange="upd(${b.id},'endTime',this.value)" />
           </div>
         </div>
-      `;
-    }).join('');
-  }
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Rácio I:HC (g/U)</label>
+            <input class="form-input" type="number" inputmode="decimal" value="${b.icRatio}" oninput="upd(${b.id},'icRatio',+this.value)" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Factor Sensibilidade</label>
+            <input class="form-input" type="number" inputmode="decimal" value="${b.isf}" oninput="upd(${b.id},'isf',+this.value)" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Objectivo Glicemia (mg/dL)</label>
+            <input class="form-input" type="number" inputmode="decimal" value="${b.target}" oninput="upd(${b.id},'target',+this.value)" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Duração Insulina (h)</label>
+            <input class="form-input" type="number" inputmode="decimal" value="${b.dia}" oninput="upd(${b.id},'dia',+this.value)" />
+          </div>
+        </div>
+        <div class="form-footer">
+          <button class="btn-delete" onclick="delBlock(${b.id})">🗑 Eliminar</button>
+          <span class="autosave-note">auto-save ✓</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-  function toggleBlock(id) {
-    expandedBlockId = expandedBlockId === id ? null : id;
-    renderBlocks();
-  }
+function toggleB(id){ openId=openId===id?null:id; renderBlocks(); }
 
-  function updateBlock(id, field, value) {
-    blocks = blocks.map(b => b.id === id ? { ...b, [field]: value } : b);
-    unsavedIds.add(id);
-    const b = blocks.find(x => x.id === id);
-    if (!b) return;
-    const nameEl = document.getElementById('bname-' + id);
-    if (nameEl) nameEl.textContent = b.name;
-    if (document.getElementById('pane-calc').classList.contains('active')) renderChips();
-    // update unsaved dot live without full re-render
-    const card = document.getElementById('bcard-' + id);
-    if (card) {
-      const row = card.querySelector('.block-name-row');
-      const existing = row.querySelector('.unsaved-dot');
-      if (!existing) {
-        const dot = document.createElement('div');
-        dot.className = 'unsaved-dot';
-        dot.title = 'Alterações por gravar';
-        row.appendChild(dot);
-      }
-    }
-  }
+function upd(id, field, val) {
+  blocks=blocks.map(b=>b.id===id?{...b,[field]:val}:b);
+  const b=blocks.find(x=>x.id===id); if(!b) return;
+  const nm=document.getElementById('bn-'+id);
+  const tm=document.getElementById('bt-'+id);
+  if(nm) nm.textContent=b.name;
+  if(tm) tm.textContent=`${b.startTime} – ${b.endTime}`;
+  if(document.getElementById('pane-calc').classList.contains('active')) renderChips();
+  autoSave();
+}
 
-  function addBlock() {
-    const id = nextId++;
-    blocks.push({ id, name:"Novo Bloco", startTime:"08:00", endTime:"10:00", icRatio:10, isf:50, target:100, dia:4 });
-    unsavedIds.add(id);
-    expandedBlockId = id;
-    renderBlocks();
-  }
+function addBlock() {
+  const id=nextId++;
+  blocks.push({id,name:"Novo Bloco",startTime:"08:00",endTime:"10:00",icRatio:10,isf:50,target:100,dia:4});
+  openId=id; renderBlocks(); autoSave(); toast('✓ Bloco adicionado');
+}
 
-  function deleteBlock(id) {
-    if (!confirm('Eliminar este bloco?')) return;
-    blocks = blocks.filter(b => b.id !== id);
-    unsavedIds.delete(id);
-    if (selectedBlock >= blocks.length) selectedBlock = Math.max(0, blocks.length - 1);
-    expandedBlockId = null;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(blocks));
-    showToast('🗑 Bloco eliminado e gravado');
-    renderBlocks();
-  }
+function delBlock(id) {
+  if(!confirm('Eliminar este bloco?')) return;
+  blocks=blocks.filter(b=>b.id!==id);
+  if(selIdx>=blocks.length) selIdx=Math.max(0,blocks.length-1);
+  openId=null; renderBlocks(); autoSave(); toast('🗑 Bloco eliminado');
+}
 
-  // ── INIT ──────────────────────────────────────────────────────────────────
-  renderChips();
+// ── init ───────────────────────────────────────────────────────────────────
+if(!HAS_LS) toast('⚠ Sem acesso ao armazenamento local', true);
+renderChips();
 </script>
 </body>
 </html>
